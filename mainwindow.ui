@@ -250,7 +250,7 @@
        <bool>true</bool>
       </property>
       <property name="columnCount">
-       <number>3</number>
+       <number>4</number>
       </property>
       <attribute name="horizontalHeaderHighlightSections">
        <bool>true</bool>
@@ -274,6 +274,11 @@
       <column>
        <property name="text">
         <string>RAM</string>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string>CPU</string>
        </property>
       </column>
      </widget>

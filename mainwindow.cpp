@@ -9,6 +9,7 @@
 #include <QTableWidgetItem>
 #include <QDir>
 #include <QFileInfoList>
+#include <iostream>
 
 using namespace std;
 
@@ -94,6 +95,8 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 
     //Ajustement Automatique des colonnes
     ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+
+    previousCpuTotalUsage = getCpuUsage() ;
 
 
 }
@@ -237,6 +240,7 @@ void MainWindow::loadProcess()
     float ram = 0.0f ;
     QString processName ;
     QFile file ;
+    float cpuUsage , currentcpuUsage , deltatTotal ;
 
     // Vider le tableau
     ui->processTable->setRowCount(0);
@@ -244,6 +248,11 @@ void MainWindow::loadProcess()
     // Ouverture du dossier
     QDir procDir("/proc");
     QFileInfoList entries = procDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot ) ;
+
+
+    // Calcul Cpu total system avant la boucle
+    currentcpuUsage = getCpuUsage() ;
+    deltatTotal = currentcpuUsage - previousCpuTotalUsage ;
 
     //Parcours du dossier
     for(const QFileInfo &entry : as_const(entries))
@@ -263,7 +272,7 @@ void MainWindow::loadProcess()
 
         if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
         {
-            return ;
+            continue ;
         }
 
         // Recuperation des infos
@@ -277,7 +286,7 @@ void MainWindow::loadProcess()
         file.setFileName(pathRam); // Ouverture du fichier
         if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
         {
-            return ;
+            continue ;
         }
 
         // Recuperation du Ram utilisé
@@ -287,7 +296,7 @@ void MainWindow::loadProcess()
         file.close() ;
 
         QStringList listLine = contenu.split( "\n" , Qt::SkipEmptyParts ) ;
-        for( const QString &line : listLine )
+        for( const QString &line : as_const(listLine) )
         {
             if(line.startsWith("VmRSS:"))
             {
@@ -301,11 +310,62 @@ void MainWindow::loadProcess()
         // ajout d'une ligne au tableau
         row = ui->processTable->rowCount() ;
         ui->processTable->insertRow(row) ;
+
+        cpuUsage = calculateCpuUsage(pid , deltatTotal ) ;
         // Ajout du PID et du NOM et du RAM
         ui->processTable->setItem(row , 0 , new QTableWidgetItem(processName)) ;
         ui->processTable->setItem(row , 1 , new QTableWidgetItem(QString::number(pid)));
         ui->processTable->setItem(row , 2 , new QTableWidgetItem(QString::number(ram , 'f' , 3 ) + " Mo" ));
-        // tri selon ram
-        ui->processTable->sortItems(2 , Qt::DescendingOrder ) ;
+        ui->processTable->setItem(row , 3 , new QTableWidgetItem(QString::number(cpuUsage , 'f' , 2) + " %" ))  ;
     }
+
+    //Maj du previousCpuUsage
+    previousCpuTotalUsage = currentcpuUsage ;
+
+}
+
+float MainWindow::calculateCpuUsage(int pid , float deltatCpuTotal )
+{
+    QFile file ;
+    QString content ;
+    QString path = "/proc/" + QString::number(pid) + "/stat" ;
+    QTextStream in ;
+    float cpuProcess ;
+    long long utime ,stime , processTime , deltatProcess = 0 ;
+
+    // Ouverture du fichier
+        file.setFileName(path) ;
+        if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
+        {
+            return 0.0f ;
+        }
+
+        in.setDevice(&file);
+        content = in.readAll() ;
+    file.close() ;
+
+    if(deltatCpuTotal <= 0 )
+    {
+        return 0.0f;
+    }
+
+    // Recuperation des donnné utiles ( utime 13 et stime 14 )
+    utime = content.split( " " , Qt::SkipEmptyParts )[13].toLongLong() ;
+    stime = content.split( " " , Qt::SkipEmptyParts )[14].toLongLong() ;
+
+    // Calcule du process time
+    processTime = utime + stime ;
+
+    // Calcul du deltatProcess
+    deltatProcess = processTime - previousProcessTime.value(pid , 0);
+
+    // Sauvegarde du nouvell valeur
+    previousProcessTime[pid] = processTime ;
+
+    cout << deltatProcess << endl ;
+
+    // Calcul cpuProcess
+    cpuProcess = (static_cast<float>(deltatProcess) / deltatCpuTotal ) * 100 ;
+
+    return cpuProcess ;
 }
