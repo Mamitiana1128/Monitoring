@@ -209,7 +209,11 @@ void MainWindow::majSystemInfo()
     ui->ramPercent->setText(QString::number(ramUsage , 'f' , 1 ) + "%") ;
     ui->ramProgressBar->setValue((int)ramUsage) ;
 
+    // Desactivation du tri autom avant remplissage
+    ui->processTable->setSortingEnabled(false) ;
     loadProcess() ;
+    ui->processTable->setSortingEnabled(true) ; // Activation du tri
+
 }
 
 
@@ -280,10 +284,19 @@ void MainWindow::loadProcess()
 
         cpuUsage = calculateCpuUsage(pid , m_lastDeltaTotal ) ;
 
-        ui->processTable->setItem(row , 0 , new QTableWidgetItem(processName)) ;
-        ui->processTable->setItem(row , 1 , new QTableWidgetItem(QString::number(pid)));
-        ui->processTable->setItem(row , 2 , new QTableWidgetItem(QString::number(ram , 'f' , 3 ) + " Mo" ));
-        ui->processTable->setItem(row , 3 , new QTableWidgetItem(QString::number(cpuUsage , 'f' , 2) + " %" ))  ;
+        // Ajout des elements dans le tableau
+
+            // Pour le tri selon ram ou proc
+            QTableWidgetItem *ramItem = new QTableWidgetItem(QString::number(ram , 'f' , 3 ) + " Mo" ) ;
+            ramItem->setData(Qt::UserRole , ram ) ;
+
+            QTableWidgetItem *cpuItem = new QTableWidgetItem(QString::number(cpuUsage , 'f' , 2) + " %" ) ;
+            cpuItem->setData(Qt::UserRole , cpuUsage ) ;
+
+            ui->processTable->setItem(row , 0 , new QTableWidgetItem(processName)) ;
+            ui->processTable->setItem(row , 1 , new QTableWidgetItem(QString::number(pid)));
+            ui->processTable->setItem(row , 2 , ramItem );
+            ui->processTable->setItem(row , 3 , cpuItem );
     }
 }
 
@@ -319,8 +332,6 @@ float MainWindow::calculateCpuUsage(int pid , long long deltatCpuTotal )
     deltatProcess = processTime - previousProcessTime.value(pid , 0);
 
     previousProcessTime[pid] = processTime ;
-
-    cout << deltatProcess << endl ;
 
     cpuProcess = (static_cast<float>(deltatProcess) / static_cast<float>(deltatCpuTotal)) * 100 ;
 
