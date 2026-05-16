@@ -21,7 +21,7 @@ class MainWindow : public QMainWindow
 
         float getCpuUsage();
         float getRamUsage();
-        float calculateCpuUsage(int pid, float deltatCpuTotal );
+        float calculateCpuUsage(int pid, long long deltatCpuTotal );
 
     public slots :
         void majSystemInfo();
@@ -32,7 +32,7 @@ class MainWindow : public QMainWindow
         Ui::MainWindow *ui;
         long long m_prevTotal = 0 ;
         long long m_prevIdle = 0 ;
-        float previousCpuTotalUsage = 0 ;
+        long long m_lastDeltaTotal = 0 ;
         QMap<int,long long> previousProcessTime ;
 
 };

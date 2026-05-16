@@ -96,9 +96,7 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     //Ajustement Automatique des colonnes
     ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
-    previousCpuTotalUsage = getCpuUsage() ;
-
-
+    getCpuUsage() ; // Premier appel pour initialiser m_prevTotal et m_prevIdle
 }
 
 MainWindow::~MainWindow()
@@ -118,39 +116,32 @@ float MainWindow::getCpuUsage()
     long long deltatTotal , deltatIdle ;
     float cpuUsage ;
 
-    // Si echec de l'ouverture
     if(! file.open(QIODevice::ReadOnly | QIODevice::Text) )
     {
         return 0 ;
     }
 
-    // Lecture de la premier ligne du fichier
     QTextStream in(&file);
-
     ligne = in.readLine() ;
-    liste = ligne.split(" " , Qt::SkipEmptyParts ) ; // decoupage en mot par mot
+    liste = ligne.split(" " , Qt::SkipEmptyParts ) ;
     file.close() ;
 
-    // Conversion des valeur en long long
-    user = liste[1].toLongLong();
-    nice = liste[2].toLongLong();
+    user   = liste[1].toLongLong();
+    nice   = liste[2].toLongLong();
     system = liste[3].toLongLong();
-    idle = liste[4].toLongLong();
+    idle   = liste[4].toLongLong();
 
-    // Calcul du totat actuel
     total = user + nice + system + idle ;
 
-    // Calcul des 2 deltats
     deltatTotal = total - m_prevTotal ;
-    deltatIdle = idle - m_prevIdle ;
+    deltatIdle  = idle  - m_prevIdle ;
 
-
-    // Calcule du pourcentage du cpu
     cpuUsage = (1 - ((float)deltatIdle / deltatTotal )) * 100.0 ;
 
-    // Sauvegarde des nouvelles valeurs
     m_prevTotal = total ;
-    m_prevIdle = idle ;
+    m_prevIdle  = idle ;
+
+    m_lastDeltaTotal = deltatTotal ;
 
     return cpuUsage ;
 }
@@ -164,7 +155,6 @@ float MainWindow::getRamUsage()
     long long memTotal = 0 , memAvailable = 0 ;
     float memUsage = 0.0f , memPercent ;
 
-    // Ouverture du fichier /pro/meminfo
     QFile file("/proc/meminfo");
     if(! file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
@@ -172,13 +162,9 @@ float MainWindow::getRamUsage()
         return 0.0f;
     }
 
-    // Recuperation de tout le contenu
     contenu = file.readAll() ;
-
-    // decoupage linge par ligne
     lignes = contenu.split("\n");
 
-    // Parcours des lignes et recuperation des valeurs utiles
     for(const QString &ligne : as_const(lignes) )
     {
         if(ligne.startsWith("MemTotal:"))
@@ -197,14 +183,13 @@ float MainWindow::getRamUsage()
         }
     }
 
-    // Calcul
     if(memTotal == 0)
     {
         return 0.0f;
     }
-    memUsage = float(memTotal - memAvailable) ;
 
-    memPercent = memUsage/memTotal * 100 ;
+    memUsage   = float(memTotal - memAvailable) ;
+    memPercent = memUsage / memTotal * 100 ;
 
     return (memPercent) ;
 }
@@ -215,11 +200,8 @@ void MainWindow::majSystemInfo()
     float cpuUsage ;
     float ramUsage ;
 
-    // Recuperation du charge
     cpuUsage = getCpuUsage() ;
     ramUsage = getRamUsage() ;
-
-    // MAJ des caffichages
 
     ui->cpuPercent->setText(QString::number(cpuUsage , 'f' , 1 ) + "%") ;
     ui->cpuProgressBar->setValue((int)cpuUsage) ;
@@ -240,34 +222,24 @@ void MainWindow::loadProcess()
     float ram = 0.0f ;
     QString processName ;
     QFile file ;
-    float cpuUsage , currentcpuUsage , deltatTotal ;
+    float cpuUsage ;
 
     // Vider le tableau
     ui->processTable->setRowCount(0);
 
-    // Ouverture du dossier
     QDir procDir("/proc");
     QFileInfoList entries = procDir.entryInfoList(QDir::Dirs | QDir::NoDotAndDotDot ) ;
 
-
-    // Calcul Cpu total system avant la boucle
-    currentcpuUsage = getCpuUsage() ;
-    deltatTotal = currentcpuUsage - previousCpuTotalUsage ;
-
-    //Parcours du dossier
     for(const QFileInfo &entry : as_const(entries))
     {
         pid = entry.fileName().toInt(&ok);
 
-        if( !ok ) // Si c'est pas un nombre
+        if( !ok )
         {
             continue ;
         }
 
-        // Constructioon du chemin vers comm
         QString pathName = "/proc/" + QString::number(pid) + "/comm" ;
-
-        // ouverture du path et recuperation du
         file.setFileName(pathName);
 
         if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
@@ -275,23 +247,19 @@ void MainWindow::loadProcess()
             continue ;
         }
 
-        // Recuperation des infos
         QTextStream in(&file) ;
         processName = in.readAll().trimmed() ;
         file.close() ;
 
-        // Construction du chemin vers status
         QString pathRam = "/proc/" + QString::number(pid) + "/status" ;
+        file.setFileName(pathRam);
 
-        file.setFileName(pathRam); // Ouverture du fichier
         if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
         {
             continue ;
         }
 
-        // Recuperation du Ram utilisé
         in.setDevice(&file) ;
-
         QString contenu = in.readAll() ;
         file.close() ;
 
@@ -304,44 +272,38 @@ void MainWindow::loadProcess()
                 break;
             }
         }
-        // Conversion du ram en Mb
+
         ram = ram / 1024.0 ;
 
-        // ajout d'une ligne au tableau
         row = ui->processTable->rowCount() ;
         ui->processTable->insertRow(row) ;
 
-        cpuUsage = calculateCpuUsage(pid , deltatTotal ) ;
-        // Ajout du PID et du NOM et du RAM
+        cpuUsage = calculateCpuUsage(pid , m_lastDeltaTotal ) ;
+
         ui->processTable->setItem(row , 0 , new QTableWidgetItem(processName)) ;
         ui->processTable->setItem(row , 1 , new QTableWidgetItem(QString::number(pid)));
         ui->processTable->setItem(row , 2 , new QTableWidgetItem(QString::number(ram , 'f' , 3 ) + " Mo" ));
         ui->processTable->setItem(row , 3 , new QTableWidgetItem(QString::number(cpuUsage , 'f' , 2) + " %" ))  ;
     }
-
-    //Maj du previousCpuUsage
-    previousCpuTotalUsage = currentcpuUsage ;
-
 }
 
-float MainWindow::calculateCpuUsage(int pid , float deltatCpuTotal )
+float MainWindow::calculateCpuUsage(int pid , long long deltatCpuTotal )
 {
     QFile file ;
     QString content ;
     QString path = "/proc/" + QString::number(pid) + "/stat" ;
     QTextStream in ;
     float cpuProcess ;
-    long long utime ,stime , processTime , deltatProcess = 0 ;
+    long long utime , stime , processTime , deltatProcess = 0 ;
 
-    // Ouverture du fichier
-        file.setFileName(path) ;
-        if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
-        {
-            return 0.0f ;
-        }
+    file.setFileName(path) ;
+    if( !file.open(QIODevice::ReadOnly | QIODevice::Text ))
+    {
+        return 0.0f ;
+    }
 
-        in.setDevice(&file);
-        content = in.readAll() ;
+    in.setDevice(&file);
+    content = in.readAll() ;
     file.close() ;
 
     if(deltatCpuTotal <= 0 )
@@ -349,23 +311,18 @@ float MainWindow::calculateCpuUsage(int pid , float deltatCpuTotal )
         return 0.0f;
     }
 
-    // Recuperation des donnné utiles ( utime 13 et stime 14 )
     utime = content.split( " " , Qt::SkipEmptyParts )[13].toLongLong() ;
     stime = content.split( " " , Qt::SkipEmptyParts )[14].toLongLong() ;
 
-    // Calcule du process time
     processTime = utime + stime ;
 
-    // Calcul du deltatProcess
     deltatProcess = processTime - previousProcessTime.value(pid , 0);
 
-    // Sauvegarde du nouvell valeur
     previousProcessTime[pid] = processTime ;
 
     cout << deltatProcess << endl ;
 
-    // Calcul cpuProcess
-    cpuProcess = (static_cast<float>(deltatProcess) / deltatCpuTotal ) * 100 ;
+    cpuProcess = (static_cast<float>(deltatProcess) / static_cast<float>(deltatCpuTotal)) * 100 ;
 
     return cpuProcess ;
 }
