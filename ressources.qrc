@@ -1,9 +1,5 @@
-<<<<<<< HEAD
-<RCC/>
-=======
 <RCC>
     <qresource prefix="/">
         <file>styles/dark.qss</file>
     </qresource>
 </RCC>
->>>>>>> main

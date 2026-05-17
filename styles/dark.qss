@@ -24,13 +24,6 @@
         font-weight : bold ;
     }
 
-<<<<<<< HEAD
-    #ramPercent ,
-    #cpuPercent {
-        font-size : 28px ;
-        font-weight : bold ;
-        color : #8b5cf6;
-=======
     #ramPercent [state="normal"],
     #cpuPercent[state="normal"]{
         font-size : 28px ;
@@ -50,7 +43,6 @@
         font-size : 28px ;
         font-weight : bold ;
         color : #d75108;
->>>>>>> main
     }
 
     QProgressBar {
