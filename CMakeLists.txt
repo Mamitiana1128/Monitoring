@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(Sys LANGUAGES CXX)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_AUTORCC ON)
 
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets)
 
@@ -12,6 +13,7 @@ qt_add_executable(Sys
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    resources.qrc
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")

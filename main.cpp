@@ -1,12 +1,26 @@
 #include "mainwindow.h"
 #include <QApplication>
+#include <QFile>
+#include <iostream>
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
-    MainWindow w;
+    QApplication app(argc, argv);
+    MainWindow fenetre ;
 
-    w.show();
+    QFile file(":/styles/dark.qss");
 
-    return QCoreApplication::exec();
+    if( file.open(QFile::ReadOnly) )
+    {
+        QString styleSheet = file.readAll();
+        app.setStyleSheet(styleSheet) ;
+    }
+    else
+    {
+        std::cout << "Erreur style" << std::endl ;
+    }
+
+    fenetre.show() ;
+
+    return app.exec() ;
 }

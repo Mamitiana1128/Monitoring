@@ -9,7 +9,6 @@
 #include <QTableWidgetItem>
 #include <QDir>
 #include <QFileInfoList>
-#include <iostream>
 
 using namespace std;
 
@@ -17,76 +16,6 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
 {
     ui->setupUi(this);
 
-    setStyleSheet(R"(
-    QWidget {
-        background-color: #1e1f26;
-        color: white;
-        font-size: 14px;
-    }
-
-    #cpuCard,
-    #gpuCard,
-    #ramCard,
-    #swapCard {
-        background-color: #2b2d39;
-        border-radius: 12px;
-    }
-
-    QLabel {
-        background: transparent;
-        padding: 4px;
-        color: white ;
-    }
-
-    #cpuTitle {
-        font-size : 18px;
-        font-weight : bold ;
-    }
-
-    #cpuPercent {
-        font-size : 28px ;
-        font-weight : bold ;
-        color : #8b5cf6;
-    }
-
-    QProgressBar {
-        border: none;
-        border-radius: 6px;
-        background-color: #3b3d4a;
-        text-align: center;
-        height: 12px;
-        padding: 8px;
-    }
-
-    QProgressBar::chunk {
-        background-color: #8b5cf6;
-        border-radius: 6px;
-    }
-
-    QTableWidget {
-        background-color: #2b2d39;
-        border: none;
-        border-radius: 12px;
-        gridline-color: #3b3d4a;
-        padding: 8px;
-    }
-
-    QHeaderView::section {
-        background-color: #352b52;
-        color: white;
-        padding: 6px;
-        border: none;
-        font-weight: bold;
-    }
-
-    QTableWidget::item {
-        padding: 5px;
-    }
-
-    QTableWidget::item:selected {
-        background-color: #8b5cf6;
-    }
-)");
     // Ajout du timer 1s
     QTimer *timer = new QTimer(this) ;
 
@@ -97,6 +26,10 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     getCpuUsage() ; // Premier appel pour initialiser m_prevTotal et m_prevIdle
+
+    // Masques les 2 cards pas encore términées
+    ui->swapCard->setVisible(false) ;
+    ui->gpuCard->setVisible(false) ;
 }
 
 MainWindow::~MainWindow()
@@ -203,15 +136,72 @@ void MainWindow::majSystemInfo()
     cpuUsage = getCpuUsage() ;
     ramUsage = getRamUsage() ;
 
+    progressBarMaj(cpuUsage , ramUsage );
+
     ui->cpuPercent->setText(QString::number(cpuUsage , 'f' , 1 ) + "%") ;
     ui->cpuProgressBar->setValue((int)cpuUsage) ;
 
     ui->ramPercent->setText(QString::number(ramUsage , 'f' , 1 ) + "%") ;
     ui->ramProgressBar->setValue((int)ramUsage) ;
 
+    // Desactivation du tri autom avant remplissage
+    ui->processTable->setSortingEnabled(false) ;
     loadProcess() ;
+    ui->processTable->setSortingEnabled(true) ; // Activation du tri
+
 }
 
+//---------------------------------------------------------------------
+
+void MainWindow::progressBarMaj(float cpu, float ram)
+{
+    QString cpuState;
+    QString ramState;
+
+    // --- Logique pour le CPU ---
+    if (cpu >= 80)
+    {
+        cpuState = "critical";
+    }
+    else if(cpu >= 60)
+    {
+        cpuState = "warning";
+    }
+    else
+    {
+        cpuState = "normal";
+    }
+
+    // --- Logique pour la RAM ---
+    if (ram >= 90)
+    {
+        ramState = "critical";
+    }
+    else if (ram >= 70)
+    {
+        ramState = "warning";
+    }
+    else
+    {
+        ramState = "normal";
+    }
+
+    // --- Application et rafraîchissement pour le CPU ---
+    if (ui->cpuProgressBar->property("state").toString() != cpuState)
+    {
+        ui->cpuProgressBar->setProperty("state", cpuState);
+        ui->cpuProgressBar->style()->unpolish(ui->cpuProgressBar);
+        ui->cpuProgressBar->style()->polish(ui->cpuProgressBar);
+    }
+
+    // --- Application et rafraîchissement pour la RAM ---
+    if (ui->ramProgressBar->property("state").toString() != ramState)
+    {
+        ui->ramProgressBar->setProperty("state", ramState);
+        ui->ramProgressBar->style()->unpolish(ui->ramProgressBar);
+        ui->ramProgressBar->style()->polish(ui->ramProgressBar);
+    }
+}
 
 //---------------------------------------------------------------------
 
@@ -222,7 +212,7 @@ void MainWindow::loadProcess()
     float ram = 0.0f ;
     QString processName ;
     QFile file ;
-    float cpuUsage ;
+    float cpuUsage = 0.0f ;
 
     // Vider le tableau
     ui->processTable->setRowCount(0);
@@ -280,10 +270,22 @@ void MainWindow::loadProcess()
 
         cpuUsage = calculateCpuUsage(pid , m_lastDeltaTotal ) ;
 
-        ui->processTable->setItem(row , 0 , new QTableWidgetItem(processName)) ;
-        ui->processTable->setItem(row , 1 , new QTableWidgetItem(QString::number(pid)));
-        ui->processTable->setItem(row , 2 , new QTableWidgetItem(QString::number(ram , 'f' , 3 ) + " Mo" ));
-        ui->processTable->setItem(row , 3 , new QTableWidgetItem(QString::number(cpuUsage , 'f' , 2) + " %" ))  ;
+        // Ajout des elements dans le tableau
+
+            // Pour le tri selon ram ou proc ou pid
+            NumericTableWidgetItem *ramItem = new NumericTableWidgetItem(QString::number(ram , 'f' , 3 ) + " Mo" ) ;
+            ramItem->setData(Qt::UserRole , ram ) ;
+
+            NumericTableWidgetItem *cpuItem = new NumericTableWidgetItem(QString::number(cpuUsage , 'f' , 2) + " %" ) ;
+            cpuItem->setData(Qt::UserRole , cpuUsage ) ;
+
+            NumericTableWidgetItem *pidItem = new NumericTableWidgetItem(QString::number(pid)) ;
+            pidItem->setData(Qt::UserRole , pid ) ;
+
+            ui->processTable->setItem(row , 0 , new QTableWidgetItem(processName)) ;
+            ui->processTable->setItem(row , 1 , pidItem );
+            ui->processTable->setItem(row , 2 , ramItem );
+            ui->processTable->setItem(row , 3 , cpuItem );
     }
 }
 
@@ -319,8 +321,6 @@ float MainWindow::calculateCpuUsage(int pid , long long deltatCpuTotal )
     deltatProcess = processTime - previousProcessTime.value(pid , 0);
 
     previousProcessTime[pid] = processTime ;
-
-    cout << deltatProcess << endl ;
 
     cpuProcess = (static_cast<float>(deltatProcess) / static_cast<float>(deltatCpuTotal)) * 100 ;
 
