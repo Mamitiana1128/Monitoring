@@ -107,6 +107,9 @@
        </item>
        <item>
         <widget class="QFrame" name="gpuCard">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -193,6 +196,9 @@
        </item>
        <item>
         <widget class="QFrame" name="swapCard">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -263,12 +269,12 @@
       </attribute>
       <column>
        <property name="text">
-        <string>PID</string>
+        <string>Processus</string>
        </property>
       </column>
       <column>
        <property name="text">
-        <string>Processus</string>
+        <string>PID</string>
        </property>
       </column>
       <column>
@@ -281,13 +287,6 @@
         <string>CPU</string>
        </property>
       </column>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="pushButton">
-      <property name="text">
-       <string>PushButton</string>
-      </property>
      </widget>
     </item>
    </layout>

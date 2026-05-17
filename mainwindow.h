@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QMap>
+#include <QTableWidgetItem>
 
 QT_BEGIN_NAMESPACE
 namespace Ui
@@ -22,6 +23,7 @@ class MainWindow : public QMainWindow
         float getCpuUsage();
         float getRamUsage();
         float calculateCpuUsage(int pid, long long deltatCpuTotal );
+        void progressBarMaj(float cpu , float ram ) ;
 
     public slots :
         void majSystemInfo();
@@ -36,4 +38,17 @@ class MainWindow : public QMainWindow
         QMap<int,long long> previousProcessTime ;
 
 };
+
+class NumericTableWidgetItem : public QTableWidgetItem
+{
+    public:
+        using QTableWidgetItem::QTableWidgetItem ;
+
+    // On surcharge l'opérateur < pour trier sur le UserRole (numérique) au lieu du texte
+    bool operator<(const QTableWidgetItem &other) const override
+    {
+        return this->data(Qt::UserRole).toDouble() < other.data(Qt::UserRole).toDouble();
+    }
+};
+
 #endif // MAINWINDOW_H

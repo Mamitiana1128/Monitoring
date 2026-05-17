@@ -1,0 +1,80 @@
+    QWidget {
+        background-color: #1e1f26;
+        color: white;
+        font-size: 14px;
+    }
+
+    #cpuCard,
+    #gpuCard,
+    #ramCard,
+    #swapCard {
+        background-color: #2b2d39;
+        border-radius: 12px;
+    }
+
+    QLabel {
+        background: transparent;
+        padding: 4px;
+        color: white ;
+    }
+
+    #ramTitle ,
+    #cpuTitle {
+        font-size : 18px;
+        font-weight : bold ;
+    }
+
+    #ramPercent ,
+    #cpuPercent {
+        font-size : 28px ;
+        font-weight : bold ;
+        color : #8b5cf6;
+    }
+
+    QProgressBar {
+        border: none;
+        border-radius: 8px;
+        background-color: #2A2A2A;
+        text-align: center;
+        color: white;
+    }
+
+    QProgressBar[state="normal"]::chunk {
+        background-color: #049b27;
+        border-radius: 6px;
+    }
+
+    QProgressBar[state="warning"]::chunk {
+        background-color: #b8cb08;
+        border-radius: 6px;
+    }
+
+    QProgressBar[state="critical"]::chunk {
+        background-color: #d75108;
+        border-radius: 6px;
+    }
+    
+
+    QTableWidget {
+        background-color: #2b2d39;
+        border: none;
+        border-radius: 12px;
+        gridline-color: #3b3d4a;
+        padding: 8px;
+    }
+
+    QHeaderView::section {
+        background-color: #352b52;
+        color: white;
+        padding: 6px;
+        border: none;
+        font-weight: bold;
+    }
+
+    QTableWidget::item {
+        padding: 5px;
+    }
+
+    QTableWidget::item:selected {
+        background-color: #8b5cf6;
+    }
