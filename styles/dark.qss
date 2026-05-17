@@ -24,11 +24,25 @@
         font-weight : bold ;
     }
 
-    #ramPercent ,
-    #cpuPercent {
+    #ramPercent [state="normal"],
+    #cpuPercent[state="normal"]{
         font-size : 28px ;
         font-weight : bold ;
-        color : #8b5cf6;
+        color : #049b27;
+    }
+
+    #ramPercent[state="warning"],
+    #cpuPercent[state="warning"]{
+        font-size : 28px ;
+        font-weight : bold ;
+        color : #b8cb08;
+    }
+
+    #ramPercent[state="critical"],
+    #cpuPercent[state="critical"]{
+        font-size : 28px ;
+        font-weight : bold ;
+        color : #d75108;
     }
 
     QProgressBar {
