@@ -36,7 +36,8 @@ class MainWindow : public QMainWindow
         long long m_prevIdle = 0 ;
         long long m_lastDeltaTotal = 0 ;
         QMap<int,long long> previousProcessTime ;
-
+        bool ramAlert = false ;
+        bool cpuAlert = false ;
 };
 
 class NumericTableWidgetItem : public QTableWidgetItem

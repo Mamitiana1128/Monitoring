@@ -17,10 +17,10 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
     ui->setupUi(this);
 
     // Ajout du timer 1s
-    QTimer *timer = new QTimer(this) ;
+        QTimer *timer = new QTimer(this) ;
 
-    connect(timer , &QTimer::timeout , this , &MainWindow::majSystemInfo ) ;
-    timer->start(1000);
+        connect(timer , &QTimer::timeout , this , &MainWindow::majSystemInfo ) ;
+        timer->start(1000);
 
     //Ajustement Automatique des colonnes
     ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -161,6 +161,17 @@ void MainWindow::progressBarMaj(float cpu, float ram)
     // --- Logique pour le CPU ---
     if (cpu >= 80)
     {
+        if( !cpuAlert )
+        {
+            QMessageBox::warning(this , "Alerte système" , "Utilisation CPU critique !" ) ;
+
+            cpuAlert = true ;
+        }
+        else
+        {
+            cpuAlert = false ;
+        }
+
         cpuState = "critical";
     }
     else if(cpu >= 60)
@@ -175,6 +186,17 @@ void MainWindow::progressBarMaj(float cpu, float ram)
     // --- Logique pour la RAM ---
     if (ram >= 90)
     {
+        if(!ramAlert)
+        {
+            QMessageBox::critical(this , "Alerte système" , "Utilisation RAM critique !");
+
+            ramAlert = true ;
+        }
+        else
+        {
+            ramAlert = false ;
+        }
+
         ramState = "critical";
     }
     else if (ram >= 70)
@@ -192,14 +214,32 @@ void MainWindow::progressBarMaj(float cpu, float ram)
         ui->cpuProgressBar->setProperty("state", cpuState);
         ui->cpuProgressBar->style()->unpolish(ui->cpuProgressBar);
         ui->cpuProgressBar->style()->polish(ui->cpuProgressBar);
+
+        ui->cpuPercent->setProperty("state", cpuState);
+
+        ui->cpuProgressBar->style()->unpolish(ui->cpuProgressBar);
+        ui->cpuProgressBar->style()->polish(ui->cpuProgressBar);
+
+        ui->cpuPercent->style()->unpolish(ui->cpuPercent);
+        ui->cpuPercent->style()->polish(ui->cpuPercent);
+
     }
 
     // --- Application et rafraîchissement pour la RAM ---
     if (ui->ramProgressBar->property("state").toString() != ramState)
     {
         ui->ramProgressBar->setProperty("state", ramState);
+
         ui->ramProgressBar->style()->unpolish(ui->ramProgressBar);
         ui->ramProgressBar->style()->polish(ui->ramProgressBar);
+
+        ui->ramPercent->setProperty("state" , ramState) ;
+
+        ui->ramProgressBar->style()->unpolish(ui->ramProgressBar);
+        ui->ramProgressBar->style()->polish(ui->ramProgressBar);
+        ui->ramPercent->style()->polish(ui->ramPercent);
+        ui->ramPercent->style()->polish(ui->ramPercent);
+
     }
 }
 

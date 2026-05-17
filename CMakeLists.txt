@@ -13,7 +13,7 @@ qt_add_executable(Sys
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
-    resources.qrc
+    ressources.qrc
 )
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
