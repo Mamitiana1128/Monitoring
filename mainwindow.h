@@ -24,6 +24,7 @@ class MainWindow : public QMainWindow
         float getRamUsage();
         float calculateCpuUsage(int pid, long long deltatCpuTotal );
         void progressBarMaj(float cpu , float ram ) ;
+        void ajoutDisk() ;
 
     public slots :
         void majSystemInfo();
@@ -39,7 +40,6 @@ class MainWindow : public QMainWindow
         bool ramAlert = false ;
         bool cpuAlert = false ;
 };
-
 
 class NumericTableWidgetItem : public QTableWidgetItem
 {
