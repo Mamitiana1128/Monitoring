@@ -24,6 +24,7 @@ class MainWindow : public QMainWindow
         float getRamUsage();
         float calculateCpuUsage(int pid, long long deltatCpuTotal );
         void progressBarMaj(float cpu , float ram ) ;
+        void ajoutDisk() ;
 
     public slots :
         void majSystemInfo();

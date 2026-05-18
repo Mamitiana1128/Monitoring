@@ -9,6 +9,7 @@
 #include <QTableWidgetItem>
 #include <QDir>
 #include <QFileInfoList>
+#include <QStorageInfo>
 
 using namespace std;
 
@@ -23,13 +24,15 @@ MainWindow::MainWindow(QWidget *parent): QMainWindow(parent), ui(new Ui::MainWin
         timer->start(1000);
 
     //Ajustement Automatique des colonnes
-    ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        ui->processTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
 
     getCpuUsage() ; // Premier appel pour initialiser m_prevTotal et m_prevIdle
 
     // Masques les 2 cards pas encore términées
     ui->swapCard->setVisible(false) ;
     ui->gpuCard->setVisible(false) ;
+
+    ajoutDisk() ;
 }
 
 MainWindow::~MainWindow()
@@ -208,7 +211,7 @@ void MainWindow::progressBarMaj(float cpu, float ram)
         ramState = "normal";
     }
 
-    // --- Application et rafraîchissement pour le CPU ---
+    // Application et rafraîchissement pour le CPU ---
     if (ui->cpuProgressBar->property("state").toString() != cpuState)
     {
         ui->cpuProgressBar->setProperty("state", cpuState);
@@ -225,7 +228,7 @@ void MainWindow::progressBarMaj(float cpu, float ram)
 
     }
 
-    // --- Application et rafraîchissement pour la RAM ---
+    // Application et rafraîchissement pour la RAM ---
     if (ui->ramProgressBar->property("state").toString() != ramState)
     {
         ui->ramProgressBar->setProperty("state", ramState);
@@ -329,6 +332,8 @@ void MainWindow::loadProcess()
     }
 }
 
+
+
 float MainWindow::calculateCpuUsage(int pid , long long deltatCpuTotal )
 {
     QFile file ;
@@ -365,4 +370,81 @@ float MainWindow::calculateCpuUsage(int pid , long long deltatCpuTotal )
     cpuProcess = (static_cast<float>(deltatProcess) / static_cast<float>(deltatCpuTotal)) * 100 ;
 
     return cpuProcess ;
+}
+
+void MainWindow::ajoutDisk()
+{
+    // Parcour de chaque disques valides
+    QList<QStorageInfo> volumes = QStorageInfo::mountedVolumes() ;
+
+    for (const QStorageInfo &storage : as_const(volumes) )
+    {
+        double espaceTotal = 0.0f ;
+        double espaceOccupe = 0.0f;
+        double espaceLibre = 0.0f;
+        double pourcentage = 0.0f;
+        QString chemin ;
+        QString textInfos ;
+        QString type ;
+
+        // verification si valide
+            if( !storage.isReady() || !storage.isValid() || storage.isReadOnly() )
+            {
+                continue ;
+            }
+
+        // Recuperation des données
+            chemin = storage.rootPath() ;
+            type = storage.fileSystemType().toLower();
+
+            // On ignore les types virtuels
+            if (type == "tmpfs" || type == "devtmpfs" || type == "sysfs" || type == "proc" || type == "overlay")
+            {
+                continue;
+            }
+
+            // On ignore les dossiers systèmes (votre code complété)
+            if (chemin.startsWith("/boot") || chemin.startsWith("/proc") || chemin.startsWith("/run") || chemin.startsWith("/tmp")  || chemin.startsWith("/dev")  || chemin.startsWith("/sys"))
+            {
+                continue;
+            }
+
+            espaceTotal = storage.bytesTotal() / (1024.0 * 1024.0 * 1024.0) ;
+            espaceLibre = storage.bytesAvailable() / (1024.0 * 1024.0 * 1024.0) ;
+
+            espaceOccupe = espaceTotal - espaceLibre ;
+
+            if( espaceTotal > 0 )
+            {
+                pourcentage = ( espaceOccupe / espaceTotal ) * 100.0 ;
+            }
+
+        // Création du QFrame
+            QFrame *diskCard = new QFrame(ui->scrollAreaWidgetContents);
+            diskCard->setObjectName("diskCard");
+
+        // Ajout du Layout au frame
+            QVBoxLayout *cardLayout = new QVBoxLayout(diskCard);
+
+        // Création des sous-widgets
+            QLabel *nom = new QLabel(chemin , diskCard);
+            nom->setObjectName("diskName") ;
+
+            textInfos = QString("%1 Go utilisés / %2 Go ").arg(espaceOccupe , 0 , 'f' , 1 ).arg(espaceTotal , 0 , 'f' , 1 ) ;
+            QLabel *infos = new QLabel( textInfos , diskCard);
+
+            QProgressBar *progressBar = new QProgressBar(diskCard);
+            progressBar->setMaximum(100);
+            progressBar->setMinimum(0) ;
+
+            progressBar->setValue(pourcentage);
+
+        // Ajout dans le cardLayout
+            cardLayout->addWidget(nom);
+            cardLayout->addWidget(infos);
+            cardLayout->addWidget(progressBar);
+
+        // Ajout dans la scrollArea
+            ui->diskLayout->addWidget(diskCard) ;
+    }
 }

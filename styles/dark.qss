@@ -18,6 +18,7 @@
         color: white ;
     }
 
+    #diskName ,
     #ramTitle ,
     #cpuTitle {
         font-size : 18px;
@@ -51,6 +52,11 @@
         background-color: #2A2A2A;
         text-align: center;
         color: white;
+    }
+
+    QProgressBar::chunk {
+        background-color: #049b27;
+        border-radius: 6px;
     }
 
     QProgressBar[state="normal"]::chunk {
@@ -91,4 +97,11 @@
 
     QTableWidget::item:selected {
         background-color: #8b5cf6;
+    }
+
+    #diskCard
+    {
+        background-color: #2b2d39;
+        border-radius: 12px;
+        padding: 10px;
     }
